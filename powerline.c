@@ -45,8 +45,10 @@ int main(int argc,char *argv[])
 	}
 	nffts_per_event=current.data->record_size/fft_size;
 	fft_output_size=fft_size/2+1;
-	fft_input=fftwf_alloc_real(fft_size*nffts_per_event);
-	fft_output=fftwf_alloc_complex(fft_size*nffts_per_event);
+	//fft_input=fftwf_alloc_real(fft_size*nffts_per_event);
+	fft_input=fftwf_malloc(sizeof(float)*nffts_per_event*fft_size);
+	//fft_output=fftwf_alloc_complex(fft_size*nffts_per_event);
+	fft_output=fftwf_malloc(sizeof(fftwf_complex)*fft_output_size*nffts_per_event);
 	output_powerspectrum=(double*)malloc(sizeof(double)*fft_output_size);
 	for(i=0;i<fft_output_size;i++) output_powerspectrum[i]=0;
 
