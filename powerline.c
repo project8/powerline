@@ -86,9 +86,12 @@ int main(int argc,char *argv[])
 
 	//print out result
 	if(format=='a') { //ASCII output
+		printf("[");
 		for(i=0;i<fft_output_size;i++) {
-			printf("%f\n",output_powerspectrum[i]);
+			if(i!=0) printf(",");
+			printf("%f",output_powerspectrum[i]);
 		} 
+		printf("]");
 	} else { //binary
 		fwrite(output_powerspectrum,sizeof(double),fft_output_size,stdout);
 	}
