@@ -6,6 +6,7 @@
 int fft_size=1024;
 int max_number_of_events=1024;
 char format='a'; //b=binary, a=ascii
+char eggname[512];
 /*---------------------------*/
 
 /*---FFT buffers and such--*/
@@ -26,12 +27,17 @@ int main(int argc,char *argv[])
 	//this is C, so I have to declare all sorts of variables in advance
 	int i;
 	int j;
+	eggname[0]='\0';
 
 	//handle the command line options
 	int onindex;
-    if(((onindex=handle_options(argc,argv))==-1)||(argc-onindex<1))
+    if(((onindex=handle_options(argc,argv))==-1)||(argc-onindex<0))
 		{print_usage(); return -1;};
-	char *eggname=argv[onindex];
+//	char *eggname=argv[onindex];
+	if(eggname[0]=='\0') {
+		fprintf(stderr,"no input file given, use -i option\n");
+		return -1;
+	}
 
 	//open the egg
 	struct egg current;
@@ -100,8 +106,9 @@ void print_usage()
 {
 	printf("powerline\n");
 	printf("prints out a power spectrum from an egg file");
-	printf("Usage: powerline [options] (input egg file)\n");
+	printf("Usage: powerline [options]\n");
 	printf("  options:\n");
+	printf("  -i (filename) sets the input egg file  MANDATORY\n");
 	printf("  -b     sets output to binary (default ASCII)\n");
 	printf("  -f (integer)  sets the number of points in the fft (default %d)\n",fft_size);
 	printf("  -n (integer)  sets the maximum number of events to scan (default %d)\n",max_number_of_events);
@@ -110,7 +117,7 @@ void print_usage()
 int handle_options(int argc,char *argv[])
 {
     int c;
-    const char *okopts="bf:n:";
+    const char *okopts="bf:n:i:";
     while((c=getopt(argc,argv,okopts))!=-1)
 	switch(c)
 	{
@@ -130,6 +137,9 @@ int handle_options(int argc,char *argv[])
 				fprintf(stderr,"max number of events is insane. aborting.\n");
 				return -1;
 			}
+			break;
+		case 'i':
+			strcpy(eggname,optarg);
 			break;
 		case '?':
 			if(index(okopts,optopt)==NULL)
