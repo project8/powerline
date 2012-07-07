@@ -16,6 +16,7 @@ fftwf_plan fft_plan=NULL;
 fftwf_complex *fft_output;
 int fft_output_size;
 double *output_powerspectrum;
+int sampling_rate_mhz;
 /*----------------*/
 
 
@@ -43,6 +44,7 @@ int main(int argc,char *argv[])
 	struct egg current;
 	mBreakEgg(eggname,&current);
 	mParseEggHeader(&current);
+	sampling_rate_mhz=current.data->sample_rate;
 
 	//decide the optimal size for ffts and allocate memory
 	if(current.data->record_size<fft_size) {
@@ -85,13 +87,15 @@ int main(int argc,char *argv[])
 		output_powerspectrum[i]*=(1000.0*(0.5/256.0)*(0.5/256.0)*(1.0/(((double)fft_size)*((double)nffts_so_far))))/50.0;
 
 	//print out result
-	if(format=='a') { //ASCII output
-		printf("[");
+	if(format=='a') { //ASCII output, JSON
+		printf("{ sampling_rate: %d , ",sampling_rate_mhz);
+		printf("data: [");
 		for(i=0;i<fft_output_size;i++) {
 			if(i!=0) printf(",");
 			printf("%f",output_powerspectrum[i]);
 		} 
 		printf("]");
+		printf("}");
 	} else { //binary
 		fwrite(output_powerspectrum,sizeof(double),fft_output_size,stdout);
 	}
