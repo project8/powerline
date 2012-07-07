@@ -88,14 +88,13 @@ int main(int argc,char *argv[])
 
 	//print out result
 	if(format=='a') { //ASCII output, JSON
-		printf("{ sampling_rate: %d , ",sampling_rate_mhz);
-		printf("data: [");
+		printf("{ \"sampling_rate\": %d , ",sampling_rate_mhz);
+		printf("\"data\": [");
 		for(i=0;i<fft_output_size;i++) {
 			if(i!=0) printf(",");
 			printf("%f",output_powerspectrum[i]);
 		} 
-		printf("]");
-		printf("}");
+		printf("] }");
 	} else { //binary
 		fwrite(output_powerspectrum,sizeof(double),fft_output_size,stdout);
 	}
