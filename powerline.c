@@ -83,8 +83,9 @@ int main(int argc,char *argv[])
 	}
 	//normalize to power in milliwatts
 	//1000 (milliwatts/watt) * 0.5 (volts fullscale)/256 (levels) / (sqrt(fft_length)*(number of averages) / 50 ohms
+	double normalization=(1000.0*0.5*0.5/(256.0*256.0))*(1.0/(((double)fft_size)*((double)nffts_so_far)))/50.0;
 	for(i=0;i<fft_output_size;i++) 
-		output_powerspectrum[i]*=(1000.0*(0.5/256.0)*(0.5/256.0)*(1.0/(((double)fft_size)*((double)nffts_so_far))))/50.0;
+		output_powerspectrum[i]*=normalization;
 
 	//print out result
 	if(format=='a') { //ASCII output, JSON
