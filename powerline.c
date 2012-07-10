@@ -82,8 +82,11 @@ int main(int argc,char *argv[])
 		nffts_so_far+=nffts_per_event;
 	}
 	//normalize to power in milliwatts
+// each sample * 0.5 (volts fullscale)/255 (levels) /(sqrt(fftlength)
+// power *2 (positive and negative freqs) *1000 mW/W / naverages
+
 	//1000 (milliwatts/watt) * 0.5 (volts fullscale)/256 (levels) / (sqrt(fft_length)*(number of averages) / 50 ohms
-	double normalization=(1000.0*0.5*0.5/(256.0*256.0))*(1.0/(((double)fft_size)*((double)nffts_so_far)))/50.0;
+	double normalization=2.0*(1000.0*0.5*0.5/(256.0*256.0))*(1.0/(((double)fft_size*fft_size)*((double)nffts_so_far)))/50.0;
 	for(i=0;i<fft_output_size;i++) 
 		output_powerspectrum[i]*=normalization;
 
@@ -93,7 +96,7 @@ int main(int argc,char *argv[])
 		printf("\"data\": [");
 		for(i=0;i<fft_output_size;i++) {
 			if(i!=0) printf(",");
-			printf("%f",output_powerspectrum[i]);
+			printf("%g",output_powerspectrum[i]);
 		} 
 		printf("] }");
 	} else { //binary
