@@ -1,10 +1,12 @@
 #include <fftw3.h>
 #include <unistd.h>
 #include "monarch.h"
+#include <math.h>
 
 /*---Configurable Settings---*/
 int fft_size=1024;
 int max_number_of_events=1024;
+double sweep_cut_dbm=-40;
 char format='j'; //b=binary, a=ascii, j=json
 char eggname[512];
 /*---------------------------*/
@@ -16,6 +18,7 @@ fftwf_plan fft_plan=NULL;
 fftwf_complex *fft_output;
 int fft_output_size;
 double *output_powerspectrum;
+int *output_powercount;
 int sampling_rate_mhz;
 /*----------------*/
 
@@ -39,6 +42,7 @@ int main(int argc,char *argv[])
 		fprintf(stderr,"no input file given, use -i option\n");
 		return -1;
 	}
+	double sweep_cut_mw=pow(10.0,sweep_cut_dbm*0.1);
 
 	//open the egg
 	struct egg current;
@@ -58,7 +62,15 @@ int main(int argc,char *argv[])
 	//fft_output=fftwf_alloc_complex(fft_size*nffts_per_event);
 	fft_output=fftwf_malloc(sizeof(fftwf_complex)*fft_output_size*nffts_per_event);
 	output_powerspectrum=(double*)malloc(sizeof(double)*fft_output_size);
-	for(i=0;i<fft_output_size;i++) output_powerspectrum[i]=0;
+	output_powercount=(int*)malloc(sizeof(int)*fft_output_size);
+	for(i=0;i<fft_output_size;i++) {
+		output_powerspectrum[i]=0;
+		output_powercount[i]=0;
+	}
+
+	//normalize to power in milliwatts
+	//1000 (milliwatts/watt) * 0.5 (volts fullscale)/256 (levels) / (sqrt(fft_length)*(number of averages) / 50 ohms
+	double normalization=2.0*(1000.0*0.5*0.5/(256.0*256.0))*(1.0/(((double)fft_size*fft_size)))/50.0;
 
 	//create the fft plan
 	fft_plan=fftwf_plan_many_dft_r2c(1,&fft_size,nffts_per_event,fft_input,NULL,1,fft_size,fft_output,NULL,1,fft_output_size,FFTW_ESTIMATE);
@@ -66,6 +78,7 @@ int main(int argc,char *argv[])
 	//perform ffts
 	int on_event=0;
 	int nffts_so_far=0;
+	double power=0;
 	while((mHatchNextEvent(&current)!=1)&&(on_event<=max_number_of_events)) {
 		//convert data to floats
 		for(i=0;i<current.data->record_size;i++)
@@ -76,19 +89,20 @@ int main(int argc,char *argv[])
 		int on_pt=0;
 		for(i=0;i<nffts_per_event;i++)
 		for(j=0;j<fft_output_size;j++) {
-			output_powerspectrum[j]+=fft_output[on_pt][0]*fft_output[on_pt][0]+fft_output[on_pt][1]*fft_output[on_pt][1];
+			power=normalization*(fft_output[on_pt][0]*fft_output[on_pt][0]+fft_output[on_pt][1]*fft_output[on_pt][1]);
+			if(power>sweep_cut_mw) {
+				output_powerspectrum[j]+=power;
+				output_powercount[j]++;
+			}
 			on_pt++;
 		}
 		nffts_so_far+=nffts_per_event;
 	}
-	//normalize to power in milliwatts
-// each sample * 0.5 (volts fullscale)/255 (levels) /(sqrt(fftlength)
-// power *2 (positive and negative freqs) *1000 mW/W / naverages
-
-	//1000 (milliwatts/watt) * 0.5 (volts fullscale)/256 (levels) / (sqrt(fft_length)*(number of averages) / 50 ohms
-	double normalization=2.0*(1000.0*0.5*0.5/(256.0*256.0))*(1.0/(((double)fft_size*fft_size)*((double)nffts_so_far)))/50.0;
-	for(i=0;i<fft_output_size;i++) 
-		output_powerspectrum[i]*=normalization;
+	//normalize each bin by the number of spectra that contibuted to it
+	for(i=0;i<fft_output_size;i++)  {
+		if(output_powercount[i]!=0)
+		output_powerspectrum[i]/=((double)output_powercount[i]);
+	}
 
 	//print out result
 	if(format=='j') { //ASCII output, JSON
@@ -111,21 +125,24 @@ int main(int argc,char *argv[])
 	fftwf_free(fft_input);
 	fftwf_free(fft_output);
 	free(output_powerspectrum);
+	free(output_powercount);
 	mCleanUp(&current);
 	return 0;
 }
 
 void print_usage()
 {
-	printf("powerline\n");
+	printf("sweepline\n");
 	printf("prints out a power spectrum from an egg file");
-	printf("Usage: powerline [options]\n");
+	printf("but only includes power over a certain value, for use with sweepers\n");
+	printf("Usage: sweepline [options]\n");
 	printf("  options:\n");
 	printf("  -i (filename) sets the input egg file  MANDATORY\n");
 	printf("  -a     sets output to plain ASCII (default JSON)\n");
 	printf("  -b     sets output to binary (default JSON)\n");
 	printf("  -f (integer)  sets the number of points in the fft (default %d)\n",fft_size);
 	printf("  -n (integer)  sets the maximum number of events to scan (default %d)\n",max_number_of_events);
+	printf("  -c (floating point) sets the cut in dBm below which power will not be averaged (default %g)\n",sweep_cut_dbm);
 }
 
 int handle_options(int argc,char *argv[])
@@ -140,6 +157,9 @@ int handle_options(int argc,char *argv[])
 			break;
 		case 'b':
 			format='b';
+			break;
+		case 'c':
+			sweep_cut_dbm=atof(optarg);
 			break;
 		case 'f':
 			fft_size=atoi(optarg);

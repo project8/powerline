@@ -1,7 +1,7 @@
 DESCRIPTION:
 powerline
 Gray Rybka 6/21/2012
-Takes a P8 egg file time series and makes a power spectrum out of the first few chunks, printing it to standard out.  Output units are in milliwatts.  Can be in ASCII or binary format, binary is in 64 bit C doubles.
+Takes a P8 egg file time series and makes a power spectrum out of the first few chunks, printing it to standard out.  Output units are in milliwatts.  Can be in ASCII (JSON) or binary format, binary is in 64 bit C doubles.
 
 COMPILING:
 
