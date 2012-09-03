@@ -1,7 +1,11 @@
 #include <fftw3.h>
 #include <unistd.h>
-#include "monarch.h"
+#include "Monarch.hpp"
+//#include "monarch.h"
 #include <math.h>
+#include <stdlib.h>
+#include <string.h>
+
 
 /*---Configurable Settings---*/
 int fft_size=1024;
@@ -45,22 +49,33 @@ int main(int argc,char *argv[])
 	double sweep_cut_mw=pow(10.0,sweep_cut_dbm*0.1);
 
 	//open the egg
+/*
 	struct egg current;
 	mBreakEgg(eggname,&current);
 	mParseEggHeader(&current);
 	sampling_rate_mhz=current.data->sample_rate;
+*/
+	//Monarch *egg=Monarch::Open(std::string(eggname),ReadMode);
+	const Monarch *egg=Monarch::OpenForReading(std::string(eggname));
+
+	const MonarchHeader *eggheader=egg->GetHeader();
+	const MonarchRecord *event;
+	sampling_rate_mhz=eggheader->GetAcqRate();
+
 
 	//decide the optimal size for ffts and allocate memory
-	if(current.data->record_size<fft_size) {
+	if(eggheader->GetRecordSize()<fft_size) {
+	//if(current.data->record_size<fft_size) {
 		fprintf(stderr,"fft size larger than record size.  make fft size smaller. aborting");
 		return -1;
 	}
-	nffts_per_event=current.data->record_size/fft_size;
+	//nffts_per_event=current.data->record_size/fft_size;
+	nffts_per_event=eggheader->GetRecordSize()/fft_size;
 	fft_output_size=fft_size/2+1;
 	//fft_input=fftwf_alloc_real(fft_size*nffts_per_event);
-	fft_input=fftwf_malloc(sizeof(float)*nffts_per_event*fft_size);
+	fft_input=(float*)fftwf_malloc(sizeof(float)*nffts_per_event*fft_size);
 	//fft_output=fftwf_alloc_complex(fft_size*nffts_per_event);
-	fft_output=fftwf_malloc(sizeof(fftwf_complex)*fft_output_size*nffts_per_event);
+	fft_output=(fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*fft_output_size*nffts_per_event);
 	output_powerspectrum=(double*)malloc(sizeof(double)*fft_output_size);
 	output_powercount=(int*)malloc(sizeof(int)*fft_output_size);
 	for(i=0;i<fft_output_size;i++) {
@@ -79,10 +94,19 @@ int main(int argc,char *argv[])
 	int on_event=0;
 	int nffts_so_far=0;
 	double power=0;
-	while((mHatchNextEvent(&current)!=1)&&(on_event<=max_number_of_events)) {
+	//while((mHatchNextEvent(&current)!=1)&&(on_event<=max_number_of_events)) {
+
+//	while((event=egg->GetNextEvent())!=NULL&&(on_event<=max_number_of_events)) {
+	while(egg->ReadRecord()) {
+		event=egg->GetRecord();
+
 		//convert data to floats
-		for(i=0;i<current.data->record_size;i++)
-			fft_input[i]=(float)(current.data->record[i])-128.0;
+		//for(i=0;i<current.data->record_size;i++)
+		for(i=0;i<eggheader->GetRecordSize();i++)
+		{
+			//fft_input[i]=(float)(current.data->record[i])-128.0;
+			fft_input[i]=(float)(event->fDataPtr[i])-128.0;
+		}
 		//perform the ffts
 		fftwf_execute(fft_plan);
 		//pack in to power spectrum
@@ -126,7 +150,7 @@ int main(int argc,char *argv[])
 	fftwf_free(fft_output);
 	free(output_powerspectrum);
 	free(output_powercount);
-	mCleanUp(&current);
+	//mCleanUp(&current);
 	return 0;
 }
 

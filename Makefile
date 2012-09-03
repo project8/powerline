@@ -1,14 +1,16 @@
-MONARCHLOC := ../monarch
-CFLAGS := -Wall -I $(MONARCHLOC) -g
-LIBS := -lfftw3f -lfftw3f_threads -lmxml -lpthread -lm
+MONARCHLOC := /usr/local
+CFLAGS := -Wall -I $(MONARCHLOC)/include -g
+LIBS := -L$(MONARCHLOC)/lib -lmonarch -lfftw3f -lfftw3f_threads -lmxml -lpthread -lm 
 
 all: powerline sweepline
 
 powerline: powerline.c
-	gcc $(CFLAGS) -o powerline powerline.c $(MONARCHLOC)/monarch.o $(LIBS)
+	g++ $(CFLAGS) -c powerline.c -o powerline.o
+	g++ $(CFLAGS) -o powerline $(LIBS) powerline.o
 
 sweepline: sweepline.c
-	gcc $(CFLAGS) -o sweepline sweepline.c $(MONARCHLOC)/monarch.o $(LIBS)
+	g++ $(CFLAGS) -c sweepline.c -o sweepline.o
+	g++ $(CFLAGS) -o sweepline  $(LIBS) sweepline.o
 
 clean:
 	rm -f powerline
