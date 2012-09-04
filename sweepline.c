@@ -13,6 +13,7 @@ int max_number_of_events=1024;
 double sweep_cut_dbm=-40;
 char format='j'; //b=binary, a=ascii, j=json
 char eggname[512];
+ChIdType on_channel=1;
 /*---------------------------*/
 
 /*---FFT buffers and such--*/
@@ -57,6 +58,7 @@ int main(int argc,char *argv[])
 */
 	//Monarch *egg=Monarch::Open(std::string(eggname),ReadMode);
 	const Monarch *egg=Monarch::OpenForReading(std::string(eggname));
+	egg->ReadHeader();
 
 	const MonarchHeader *eggheader=egg->GetHeader();
 	const MonarchRecord *event;
@@ -64,7 +66,8 @@ int main(int argc,char *argv[])
 
 
 	//decide the optimal size for ffts and allocate memory
-	if(eggheader->GetRecordSize()<fft_size) {
+//	printf("record size: %d\n",eggheader->GetRecordSize());
+	if(eggheader->GetRecordSize()<(unsigned int)fft_size) {
 	//if(current.data->record_size<fft_size) {
 		fprintf(stderr,"fft size larger than record size.  make fft size smaller. aborting");
 		return -1;
@@ -98,7 +101,8 @@ int main(int argc,char *argv[])
 
 //	while((event=egg->GetNextEvent())!=NULL&&(on_event<=max_number_of_events)) {
 	while(egg->ReadRecord()) {
-		event=egg->GetRecord();
+		event=egg->GetRecordOne();
+		if(event->fCId!=on_channel) continue;
 
 		//convert data to floats
 		//for(i=0;i<current.data->record_size;i++)
@@ -166,13 +170,14 @@ void print_usage()
 	printf("  -b     sets output to binary (default JSON)\n");
 	printf("  -f (integer)  sets the number of points in the fft (default %d)\n",fft_size);
 	printf("  -n (integer)  sets the maximum number of events to scan (default %d)\n",max_number_of_events);
-	printf("  -c (floating point) sets the cut in dBm below which power will not be averaged (default %g)\n",sweep_cut_dbm);
+	printf("  -c (1 or 2)  sets the channed being used (default %d)\n",on_channel);
+	printf("  -g (floating point) sets the cut in dBm below which power will not be averaged (default %g)\n",sweep_cut_dbm);
 }
 
 int handle_options(int argc,char *argv[])
 {
     int c;
-    const char *okopts="abf:n:i:";
+    const char *okopts="abf:n:i:c:g:";
     while((c=getopt(argc,argv,okopts))!=-1)
 	switch(c)
 	{
@@ -182,8 +187,11 @@ int handle_options(int argc,char *argv[])
 		case 'b':
 			format='b';
 			break;
-		case 'c':
+		case 'g':
 			sweep_cut_dbm=atof(optarg);
+			break;
+		case 'c':
+			on_channel=atoi(optarg);
 			break;
 		case 'f':
 			fft_size=atoi(optarg);

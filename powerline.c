@@ -9,6 +9,7 @@ int fft_size=1024;
 int max_number_of_events=1024;
 char format='j'; //b=binary, a=ascii, j=json
 char eggname[512];
+ChIdType on_channel=1;
 /*---------------------------*/
 
 /*---FFT buffers and such--*/
@@ -59,6 +60,7 @@ int main(int argc,char *argv[])
 	sampling_rate_mhz=eggheader->GetAcqRate();
 
 
+//	printf("record size: %d\n",eggheader->GetRecordSize());
 	//decide the optimal size for ffts and allocate memory
 	if(eggheader->GetRecordSize()<(unsigned int)fft_size) {
 //	if(current.data->record_size<fft_size) {
@@ -84,7 +86,8 @@ int main(int argc,char *argv[])
 	//while((mHatchNextEvent(&current)!=1)&&(on_event<=max_number_of_events)) {
 	//while((event=egg->GetNextEvent())!=NULL&&(on_event<=max_number_of_events)) {
 	while(egg->ReadRecord()) {
-		event=egg->GetRecord();
+		event=egg->GetRecordOne();
+		if(event->fCId!=on_channel) continue;
 		//convert data to floats
 		//for(i=0;i<current.data->record_size;i++)
 		for(i=0;i<eggheader->GetRecordSize();i++)
@@ -147,17 +150,21 @@ void print_usage()
 	printf("  -b     sets output to binary (default JSON)\n");
 	printf("  -f (integer)  sets the number of points in the fft (default %d)\n",fft_size);
 	printf("  -n (integer)  sets the maximum number of events to scan (default %d)\n",max_number_of_events);
+	printf("  -c (1 or 2)  sets the channed being used (default %d)\n",on_channel);
 }
 
 int handle_options(int argc,char *argv[])
 {
     int c;
-    const char *okopts="abf:n:i:";
+    const char *okopts="abf:n:i:c:";
     while((c=getopt(argc,argv,okopts))!=-1)
 	switch(c)
 	{
 		case 'a':
 			format='a';
+			break;
+		case 'c':
+			on_channel=atoi(optarg);
 			break;
 		case 'b':
 			format='b';

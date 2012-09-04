@@ -1,6 +1,6 @@
 MONARCHLOC := /usr/local
 CFLAGS := -Wall -I $(MONARCHLOC)/include -g
-LIBS := -L$(MONARCHLOC)/lib -lmonarch -lfftw3f -lfftw3f_threads -lmxml -lpthread -lm 
+LIBS := -L$(MONARCHLOC)/lib -lMonarchCore -lfftw3f -lfftw3f_threads -lmxml -lpthread -lm 
 
 all: powerline sweepline
 
