@@ -86,8 +86,14 @@ int main(int argc,char *argv[])
 	//while((mHatchNextEvent(&current)!=1)&&(on_event<=max_number_of_events)) {
 	//while((event=egg->GetNextEvent())!=NULL&&(on_event<=max_number_of_events)) {
 	while(egg->ReadRecord()) {
-		event=egg->GetRecordOne();
-		if(event->fCId!=on_channel) continue;
+		if(on_channel==1)
+			event=egg->GetRecordOne();
+		else 
+			event=egg->GetRecordTwo();
+		if(event==NULL)  {
+			fprintf(stderr,"ERROR: event was null.  aborting\n");
+			return -1;
+			}
 		//convert data to floats
 		//for(i=0;i<current.data->record_size;i++)
 		for(i=0;i<eggheader->GetRecordSize();i++)

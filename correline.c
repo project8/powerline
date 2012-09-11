@@ -14,9 +14,10 @@ char eggname[512];
 /*---FFT buffers and such--*/
 int nffts_per_event;
 float *fft_input;
-fftwf_plan fft_plan=NULL;
-fftwf_complex *fft_output;
-fftwf_complex *last_channel_output;
+fftwf_plan fft_plan_1=NULL;
+fftwf_plan fft_plan_2=NULL;
+fftwf_complex *fft_output_1;
+fftwf_complex *fft_output_2;
 fftwf_complex *correlation_average;
 int fft_output_size;
 int sampling_rate_mhz;
@@ -59,14 +60,19 @@ int main(int argc,char *argv[])
 	nffts_per_event=eggheader->GetRecordSize()/fft_size;
 	fft_output_size=fft_size/2+1;
 	fft_input=(float*)fftwf_malloc(sizeof(float)*nffts_per_event*fft_size);
-	fft_output=(fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*fft_output_size*nffts_per_event);
-	last_channel_output=(fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*fft_output_size*nffts_per_event);
+	fft_output_1=(fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*fft_output_size*nffts_per_event);
+	fft_output_2=(fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*fft_output_size*nffts_per_event);
 	correlation_average=(fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*fft_output_size*nffts_per_event);
-	output_powerspectrum=(double*)malloc(sizeof(double)*fft_output_size);
-	for(i=0;i<fft_output_size;i++) output_powerspectrum[i]=0;
+	for(i=0;i<fft_output_size;i++)	{ 
+		correlation_average[i][0]=0;
+		correlation_average[i][1]=0;
+		}
+	//output_powerspectrum=(double*)malloc(sizeof(double)*fft_output_size);
+	//for(i=0;i<fft_output_size;i++) output_powerspectrum[i]=0;
 
 	//create the fft plan
-	fft_plan=fftwf_plan_many_dft_r2c(1,&fft_size,nffts_per_event,fft_input,NULL,1,fft_size,fft_output,NULL,1,fft_output_size,FFTW_ESTIMATE);
+	fft_plan_1=fftwf_plan_many_dft_r2c(1,&fft_size,nffts_per_event,fft_input,NULL,1,fft_size,fft_output_1,NULL,1,fft_output_size,FFTW_ESTIMATE);
+	fft_plan_2=fftwf_plan_many_dft_r2c(1,&fft_size,nffts_per_event,fft_input,NULL,1,fft_size,fft_output_2,NULL,1,fft_output_size,FFTW_ESTIMATE);
 
 	//perform ffts
 	int last_channel=-1; //-1 means last channel buffer empty
@@ -79,22 +85,21 @@ int main(int argc,char *argv[])
 		for(i=0;i<eggheader->GetRecordSize();i++)
 			fft_input[i]=(float)(event->fDataPtr[i])-128.0;
 		//perform the ffts
-		fftwf_execute(fft_plan);
-		//is there a previous channel
-		if(last_channel==-1) { //No.  Store for later
-			memcpy(last_channel_output,fft_output,sizeof(fftwf_complex)*fft_output_size*nffts_per_event);
-			last_channel=event->fCId;
-		} else { //Yes.  Correlate
-			if(event->fCId==on_channel) {
-				cerr << "WARNING! ADJACENT CHANNEL EVENTS DETECTED.  MAY BE PERFORMING AUTOCORRELATION" << endl;
-			}
-			int on_pt=0;
-			for(i=0;i<nffts_per_event;i++)
-			for(j=0;j<fft_output_size;j++) {
-				fftwf_complex mult=fft_output[on_pt]*last_channel_output[on_pt];
-				correlation_average[j]+=mult;
-				on_pt++;
-			}
+		fftwf_execute(fft_plan_1);
+		//and the other channel
+		event=egg->GetRecordTwo();
+		for(i=0;i<eggheader->GetRecordSize();i++)
+			fft_input[i]=(float)(event->fDataPtr[i])-128.0;
+		fftwf_execute(fft_plan_2);
+		int on_pt=0;
+		for(i=0;i<nffts_per_event;i++)
+		for(j=0;j<fft_output_size;j++) {
+			fftwf_complex mult;
+			mult[0]=fft_output_1[on_pt][0]*fft_output_2[on_pt][0]-fft_output_1[on_pt][1]*fft_output_2[on_pt][1];
+			mult[1]=fft_output_1[on_pt][0]*fft_output_2[on_pt][1]+fft_output_1[on_pt][1]*fft_output_2[on_pt][0];
+			correlation_average[j][0]+=mult[0];
+			correlation_average[j][1]+=mult[1];
+			on_pt++;
 		}
 		nffts_so_far+=nffts_per_event;
 	}
@@ -117,12 +122,12 @@ int main(int argc,char *argv[])
 
 	//clean up
 	egg->Close();
-	fftwf_destroy_plan(fft_plan);
+	fftwf_destroy_plan(fft_plan_1);
+	fftwf_destroy_plan(fft_plan_2);
 	fftwf_free(fft_input);
-	fftwf_free(fft_output);
-	fftwf_free(last_channel_output);
+	fftwf_free(fft_output_1);
+	fftwf_free(fft_output_2);
 	fftwf_free(correlation_average);
-	free(output_powerspectrum);
 	//mCleanUp(&current);
 	return 0;
 }
