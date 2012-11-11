@@ -95,8 +95,8 @@ int main(int argc,char *argv[])
 		for(i=0;i<nffts_per_event;i++)
 		for(j=0;j<fft_output_size;j++) {
 			fftwf_complex mult;
-			mult[0]=fft_output_1[on_pt][0]*fft_output_2[on_pt][0]-fft_output_1[on_pt][1]*fft_output_2[on_pt][1];
-			mult[1]=fft_output_1[on_pt][0]*fft_output_2[on_pt][1]+fft_output_1[on_pt][1]*fft_output_2[on_pt][0];
+			mult[0]=fft_output_1[on_pt][0]*fft_output_2[on_pt][0]+fft_output_1[on_pt][1]*fft_output_2[on_pt][1];
+			mult[1]=fft_output_1[on_pt][0]*fft_output_2[on_pt][1]-fft_output_1[on_pt][1]*fft_output_2[on_pt][0];
 			correlation_average[j][0]+=mult[0];
 			correlation_average[j][1]+=mult[1];
 			on_pt++;
