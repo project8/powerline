@@ -10,10 +10,12 @@
 /*---Configurable Settings---*/
 int fft_size=1024;
 int max_number_of_events=1024;
-double sweep_cut_dbm=-40;
+//double sweep_cut_dbm=-40;
+double sweep_cut_dbm=-15;
 char format='j'; //b=binary, a=ascii, j=json
 char eggname[512];
-ChIdType on_channel=1;
+int on_channel=1;
+//int on_channel=2;
 /*---------------------------*/
 
 /*---FFT buffers and such--*/
@@ -101,8 +103,11 @@ int main(int argc,char *argv[])
 
 //	while((event=egg->GetNextEvent())!=NULL&&(on_event<=max_number_of_events)) {
 	while(egg->ReadRecord()) {
-		event=egg->GetRecordOne();
-		if(event->fCId!=on_channel) continue;
+		if(on_channel==1) {
+			event=egg->GetRecordOne();
+		} else {
+			event=egg->GetRecordTwo();
+		}
 
 		//convert data to floats
 		//for(i=0;i<current.data->record_size;i++)
