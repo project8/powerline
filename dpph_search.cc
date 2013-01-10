@@ -12,8 +12,9 @@ void print_usage(); //print out instructions
 int handle_options(int argc,char *argv[]); //command line options
 
 //----changable parameters----
-int fft_size=1024;
-double power_cut_dbm=-15;
+//int fft_size=1024;
+int fft_size=256;
+double power_cut_dbm=-16;
 string input_eggname;
 double freq_offset=0;
 char format='j';
@@ -139,7 +140,8 @@ int main(int argc,char *argv[])
 		for(int i=0;i<out_size;i++) {
 			if(i!=0) printf(",");
 			if(correlated_average_counter[i]!=0)
-			printf("%g",correlated_average[i]/correlated_average_counter[i]);
+			//printf("%f",scale*correlated_average[i]/correlated_average_counter[i]);
+			printf("%f",scale*avg_1[i]/correlated_average_counter[i]);
 			else
 			printf("0");
 		}
@@ -167,7 +169,7 @@ int main(int argc,char *argv[])
 int handle_options(int argc,char *argv[])
 {
 	int c;
-    const char *okopts="i:o:";
+    const char *okopts="i:o:a";
     while((c=getopt(argc,argv,okopts))!=-1)
 	switch(c)
 	{
@@ -180,6 +182,15 @@ int handle_options(int argc,char *argv[])
 		case 'a':
 			format='a';
 			break;
+		case '?':
+			//FILE *errfl=fopen("errfile.log","w");
+			if(index(okopts,optopt)==NULL)
+				fprintf(stderr,"{ error: \"unknown option: %c\n, aborting\"}",optopt);
+			else
+				fprintf(stderr,"{ error: \"option %c does not take an argument, aborting\"}",optopt);
+			//fclose(errfl);
+			return -1;
+
 	}
 	return optind;
 }

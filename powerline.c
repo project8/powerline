@@ -5,8 +5,8 @@
 #include "Monarch.hpp"
 
 /*---Configurable Settings---*/
-//int fft_size=1024;
-int fft_size=128;
+int fft_size=256;
+//int fft_size=128;
 int max_number_of_events=1024;
 char format='j'; //b=binary, a=ascii, j=json
 char eggname[512];
