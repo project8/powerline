@@ -14,7 +14,7 @@ int handle_options(int argc,char *argv[]); //command line options
 //----changable parameters----
 //int fft_size=1024;
 int fft_size=256;
-double power_cut_dbm=-16;
+double power_cut_dbm=-25;
 string input_eggname;
 double freq_offset=0;
 char format='j';
