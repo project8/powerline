@@ -14,7 +14,7 @@ int handle_options(int argc,char *argv[]); //command line options
 //----changable parameters----
 //int fft_size=1024;
 int fft_size=256;
-//double power_cut_dbm=-25;
+double power_cut_dbm=-15;
 double snr_cut=20;
 string input_eggname;
 double freq_offset=0;
@@ -50,7 +50,6 @@ int main(int argc,char *argv[])
 	int on_event=0;
 	double total_time=0;
 	double scale=correlator.getScaleFactor();
-//	double correlation_cut=pow(pow10(power_cut_dbm/10.0)/scale,2.0);
 
 	int out_size=fft_size/2+1;
 	uncorrelated_shape_1=new double[out_size];
@@ -73,6 +72,12 @@ int main(int argc,char *argv[])
 	bool background_set=false;
 	double background_level=0;
 	double signal_level=0;
+	//use the dbm power
+	background_set=true;
+	signal_level=pow(pow10(power_cut_dbm/10.0)/scale,2.0);
+
+//	cout << " a record is " << correlator.output_waterfall.time_step*((double)correlator.nffts_per_event) << " seconds long" << endl;
+	return 0;
     while(egg->ReadRecord()) {
 		correlator.process_channel1(egg);
 		//if this is the first event, calibrate the average power
@@ -88,8 +93,6 @@ int main(int argc,char *argv[])
 			background_level/=((double)counter);
 			signal_level=background_level*snr_cut;
 			background_set=true;
-//			cout << "background level is " << scale*background_level << endl;
-//			cout << "signal level is " << scale*signal_level << endl;
 		}
 
 		for(int i=0;i<correlator.output_waterfall.npoints_t;i++) {
@@ -107,7 +110,8 @@ int main(int argc,char *argv[])
 			}
 			//average only the max power bins that pass cut
 			if(maxpower>signal_level) {
-			//	cout << total_time+correlator.output_waterfall.time_step*((double)i) << " " << correlator.output_waterfall.freq_step*((double)maxbin) << " " << maxpower << endl;
+//uncomment this if you want to check tracking of sweeper
+//				cout << total_time+correlator.output_waterfall.time_step*((double)i) << " " << correlator.output_waterfall.freq_step*((double)maxbin) << " " << maxpower << endl;
 				if(maxbin==0) maxbin=1;
 				if(maxbin+1==correlator.output_waterfall.npoints_f) maxbin=correlator.output_waterfall.npoints_f-2;
 				int aindex=correlator.output_waterfall.getIndex(maxbin-1,i);
@@ -196,6 +200,7 @@ int main(int argc,char *argv[])
 				*/
 		total_time+=correlator.getEventDuration();
 	}
+//		return 0;
 	//print out json
 //	/*
 	if(format=='j') {
@@ -211,9 +216,15 @@ int main(int argc,char *argv[])
 		}
 		printf("] }");
 	} else { //assume ascii otherwise
+		cout << "#background level is " << scale*background_level << endl;
+		cout << "#signal level is " << scale*signal_level << endl;
+
 		for(int i=0;i<out_size;i++) {
 			printf("%f ",correlator.output_waterfall.freq_step*((double)i)/1e6);
-			printf("%f",scale*avg_1[i]/correlated_average_counter[i]);
+			if(correlated_average_counter[i]>0) 
+				printf("%f",scale*avg_1[i]/correlated_average_counter[i]);
+			else
+				printf("0");
 			printf("\n");
 		}
 		/*
