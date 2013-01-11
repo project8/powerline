@@ -105,19 +105,30 @@ void Correlator::init(const Monarch *egg,int myfftsize)
 
 }
 	
-void Correlator::process_event(const Monarch *egg)
+void Correlator::process_channel1(const Monarch *egg)
 {
-    const MonarchRecord *event_1=egg->GetRecordOne();
+	const MonarchRecord *event_1=egg->GetRecordOne();
 	//convert data to floats
    	for(int i=0;i<record_size;i++)
    		fft_input[i]=(float)(event_1->fDataPtr[i])-128.0;
    	//perform the ffts
    	fftwf_execute(fft_plan_1);
-   	//and the other channel
-    const MonarchRecord *event_2=egg->GetRecordTwo();
+}
+
+void Correlator::process_channel2(const Monarch *egg)
+{
+	const MonarchRecord *event_2=egg->GetRecordTwo();
+	//convert data to floats
 	for(int i=0;i<record_size;i++)
    		fft_input[i]=(float)(event_2->fDataPtr[i])-128.0;
+   	//perform the ffts
     fftwf_execute(fft_plan_2);
+}
+	
+void Correlator::process_event(const Monarch *egg)
+{
+	process_channel1(egg);
+	process_channel2(egg);
 	//make the correlation
 	int on_pt=0;
  	for(int i=0;i<nffts_per_event;i++)

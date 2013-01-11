@@ -42,7 +42,11 @@ class Correlator
 {
 public:
 	void init(const Monarch *egg,int myfftsize);
+	//process both channels and then do a correlation
 	void process_event(const Monarch *egg);
+	//use these if you only care about one channel
+	void process_channel1(const Monarch *egg);
+	void process_channel2(const Monarch *egg);
 	double getScaleFactor(); //returns units of mW
 
 	float *fft_input;

@@ -14,7 +14,8 @@ int handle_options(int argc,char *argv[]); //command line options
 //----changable parameters----
 //int fft_size=1024;
 int fft_size=256;
-double power_cut_dbm=-25;
+//double power_cut_dbm=-25;
+double snr_cut=20;
 string input_eggname;
 double freq_offset=0;
 char format='j';
@@ -27,6 +28,7 @@ double *correlated_average=NULL;
 double *correlated_average_counter=NULL;
 double *avg_1=NULL;
 double *avg_2=NULL;
+int *max_power_bin=NULL;
 //----------------------------
 
 int main(int argc,char *argv[])
@@ -48,7 +50,7 @@ int main(int argc,char *argv[])
 	int on_event=0;
 	double total_time=0;
 	double scale=correlator.getScaleFactor();
-	double correlation_cut=pow(pow10(power_cut_dbm/10.0)/scale,2.0);
+//	double correlation_cut=pow(pow10(power_cut_dbm/10.0)/scale,2.0);
 
 	int out_size=fft_size/2+1;
 	uncorrelated_shape_1=new double[out_size];
@@ -66,8 +68,71 @@ int main(int argc,char *argv[])
 		avg_1[i]=0;
 		avg_2[i]=0;
 	}
+	max_power_bin=new int[correlator.nffts_per_event];
 	int sampling_rate_mhz=correlator.sampling_rate_mhz;
+	bool background_set=false;
+	double background_level=0;
+	double signal_level=0;
     while(egg->ReadRecord()) {
+		correlator.process_channel1(egg);
+		//if this is the first event, calibrate the average power
+		if(!background_set) {
+			long counter=0;
+			for(int i=0;i<correlator.nffts_per_event;i++) {
+			for(int j=1;j<correlator.fft_output_size;j++) {
+				int index=correlator.output_waterfall.getIndex(j,i);
+				background_level+=correlator.getPowerChannel1(index);
+				counter++;
+			} 
+			}
+			background_level/=((double)counter);
+			signal_level=background_level*snr_cut;
+			background_set=true;
+//			cout << "background level is " << scale*background_level << endl;
+//			cout << "signal level is " << scale*signal_level << endl;
+		}
+
+		for(int i=0;i<correlator.output_waterfall.npoints_t;i++) {
+			int maxbin=0;
+			double maxpower=0;
+			//find the maximum bin
+			//(ignore bin zero)
+			for(int j=1;j<correlator.output_waterfall.npoints_f;j++) {
+				int index=correlator.output_waterfall.getIndex(j,i);
+				double power=correlator.getPowerChannel1(index);
+				if(power>maxpower) {
+					maxbin=j;
+					maxpower=power;
+				}
+			}
+			//average only the max power bins that pass cut
+			if(maxpower>signal_level) {
+			//	cout << total_time+correlator.output_waterfall.time_step*((double)i) << " " << correlator.output_waterfall.freq_step*((double)maxbin) << " " << maxpower << endl;
+				if(maxbin==0) maxbin=1;
+				if(maxbin+1==correlator.output_waterfall.npoints_f) maxbin=correlator.output_waterfall.npoints_f-2;
+				int aindex=correlator.output_waterfall.getIndex(maxbin-1,i);
+				int bindex=correlator.output_waterfall.getIndex(maxbin,i);
+				int cindex=correlator.output_waterfall.getIndex(maxbin+1,i);
+				double a=correlator.getPowerChannel1(aindex);
+				double b=correlator.getPowerChannel1(bindex);
+				double c=correlator.getPowerChannel1(cindex);
+				double sum=a+b+c;
+				double afrac=a/sum;
+				double bfrac=b/sum;
+				double cfrac=c/sum;
+				avg_1[maxbin-1]+=a*afrac;
+				avg_1[maxbin]+=b*bfrac;
+				avg_1[maxbin+1]+=c*cfrac;
+				correlated_average_counter[maxbin-1]+=afrac;
+				correlated_average_counter[maxbin]+=bfrac;
+				correlated_average_counter[maxbin+1]+=cfrac;
+			}
+		}
+
+
+		/*  This commented out region was for when I was trying to
+		 *  use correlation
+		//get mean power of everything else
 		correlator.process_event(egg);
 		for(int i=0;i<correlator.output_waterfall.npoints_t;i++) {
 			double max_power=0;
@@ -81,10 +146,8 @@ int main(int argc,char *argv[])
 					max_power=power;
 					max_power_pos=j;
 				}
-				/*
-				if(power>correlation_cut)
-					cout << total_time+correlator.output_waterfall.time_step*((double)i) << " " << correlator.output_waterfall.freq_step*((double)j) << " " << sqrt(power)*scale << endl;
-					*/
+///				if(power>correlation_cut)
+//					cout << total_time+correlator.output_waterfall.time_step*((double)i) << " " << correlator.output_waterfall.freq_step*((double)j) << " " << sqrt(power)*scale << endl;
 
 			}
 			//if the sweeper is turned off, use this to measure uncorrelated power
@@ -130,6 +193,7 @@ int main(int argc,char *argv[])
 			correlated_average_counter[max_power_pos+1]+=cfrac;
 			}
 		}
+				*/
 		total_time+=correlator.getEventDuration();
 	}
 	//print out json
@@ -147,6 +211,12 @@ int main(int argc,char *argv[])
 		}
 		printf("] }");
 	} else { //assume ascii otherwise
+		for(int i=0;i<out_size;i++) {
+			printf("%f ",correlator.output_waterfall.freq_step*((double)i)/1e6);
+			printf("%f",scale*avg_1[i]/correlated_average_counter[i]);
+			printf("\n");
+		}
+		/*
 		for(int i=0;i<(fft_size/2+1);i++) {
 			cout << freq_offset+(correlator.output_waterfall.freq_step*((double)i))/1e6 << " ";
 			if(correlated_average_counter[i]>0) {
@@ -158,6 +228,7 @@ int main(int argc,char *argv[])
 			cout << scale*uncorrelated_shape_1[i]/((double)n_uncorrelated_shape_avgs) << " ";
 			cout << scale*uncorrelated_shape_2[i]/((double)n_uncorrelated_shape_avgs) << endl;
 		}
+		*/
 
 	}
 //	*/
