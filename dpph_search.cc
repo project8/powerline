@@ -14,7 +14,7 @@ int handle_options(int argc,char *argv[]); //command line options
 //----changable parameters----
 //int fft_size=1024;
 int fft_size=256;
-double power_cut_dbm=-15;
+double power_cut_dbm=-40;
 double snr_cut=20;
 string input_eggname;
 double freq_offset=0;
@@ -74,10 +74,10 @@ int main(int argc,char *argv[])
 	double signal_level=0;
 	//use the dbm power
 	background_set=true;
-	signal_level=pow(pow10(power_cut_dbm/10.0)/scale,2.0);
+	signal_level=pow10(power_cut_dbm/10.0)/scale;
+//	cerr << "signal level cut is " << signal_level << cut;
 
 //	cout << " a record is " << correlator.output_waterfall.time_step*((double)correlator.nffts_per_event) << " seconds long" << endl;
-	return 0;
     while(egg->ReadRecord()) {
 		correlator.process_channel1(egg);
 		//if this is the first event, calibrate the average power
