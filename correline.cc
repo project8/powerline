@@ -70,7 +70,9 @@ int main(int argc,char *argv[])
 		printf("\"data\": [");
 		for(int i=0;i<out_size;i++) {
 			if(i!=0) printf(",");
-			printf("%g",scale*sqrt(spectrum_sum_r[i]*spectrum_sum_r[i]+spectrum_sum_i[i]*spectrum_sum_i[i])/((double)total_fft_count));
+			//this is the power info
+			//printf("%g",scale*sqrt(spectrum_sum_r[i]*spectrum_sum_r[i]+spectrum_sum_i[i]*spectrum_sum_i[i])/((double)total_fft_count));
+			printf("%f",atan2(spectrum_sum_r[i],spectrum_sum_i[i]));
 		}
 		printf("] }");
 	} else { //assume ascii otherwise
