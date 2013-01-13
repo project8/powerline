@@ -23,7 +23,9 @@ char format='j';
 
 //-------storage-----------
 double *spectrum_sum_r;
+double *spectrum_sum_rr;
 double *spectrum_sum_i;
+double *spectrum_sum_ii;
 //-------------------------
 
 int main(int argc,char *argv[])
@@ -48,10 +50,14 @@ int main(int argc,char *argv[])
 
 	int out_size=correlator.output_waterfall.npoints_f;
 	spectrum_sum_r=new double[out_size];
+	spectrum_sum_rr=new double[out_size];
 	spectrum_sum_i=new double[out_size];
+	spectrum_sum_ii=new double[out_size];
 	for(int i=0;i<out_size;i++) {
 		spectrum_sum_r[i]=0;
+		spectrum_sum_rr[i]=0;
 		spectrum_sum_i[i]=0;
+		spectrum_sum_ii[i]=0;
 	}
 	long total_fft_count=0;
     while(egg->ReadRecord()) {
@@ -60,7 +66,9 @@ int main(int argc,char *argv[])
 			for(int j=0;j<correlator.output_waterfall.npoints_f;j++) {
 				int index=correlator.output_waterfall.getIndex(j,i);
 				spectrum_sum_r[j]+=correlator.output_waterfall.data[index][0];
+				spectrum_sum_rr[j]+=(correlator.output_waterfall.data[index][0]*correlator.output_waterfall.data[index][0]);
 				spectrum_sum_i[j]+=correlator.output_waterfall.data[index][1];
+				spectrum_sum_ii[j]+=(correlator.output_waterfall.data[index][1]*correlator.output_waterfall.data[index][1]);
 			}
 			total_fft_count++;
 		}
@@ -71,13 +79,26 @@ int main(int argc,char *argv[])
 		for(int i=0;i<out_size;i++) {
 			if(i!=0) printf(",");
 			//this is the power info
-			//printf("%g",scale*sqrt(spectrum_sum_r[i]*spectrum_sum_r[i]+spectrum_sum_i[i]*spectrum_sum_i[i])/((double)total_fft_count));
-			printf("%f",atan2(spectrum_sum_r[i],spectrum_sum_i[i]));
+			printf("%g",scale*sqrt(spectrum_sum_r[i]*spectrum_sum_r[i]+spectrum_sum_i[i]*spectrum_sum_i[i])/((double)total_fft_count));
+			//this is the phase angle info
+			//printf("%f",atan2(spectrum_sum_r[i],spectrum_sum_i[i]));
 		}
 		printf("] }");
 	} else { //assume ascii otherwise
+		printf("#scale: %g\n",scale);
+		printf("#avg_r avg_i stdev_r stdev_i\n");
 		for(int i=0;i<out_size;i++) {
-			printf("%f %g\n",correlator.output_waterfall.freq_step*((double)i)/1e6,scale*sqrt(spectrum_sum_r[i]*spectrum_sum_r[i]+spectrum_sum_i[i]*spectrum_sum_i[i])/((double)total_fft_count));
+			printf("%f ",correlator.output_waterfall.freq_step*((double)i)/1e6);
+			double n=((double)total_fft_count);
+			double avgr=spectrum_sum_r[i]/n;
+			double avgi=spectrum_sum_i[i]/n;
+			printf("%g ",scale*avgr);
+			printf("%g ",scale*avgi);
+			double stdevr=sqrt(spectrum_sum_rr[i]/n-avgr*avgr);
+			double stdevi=sqrt(spectrum_sum_ii[i]/n-avgi*avgi);
+			printf("%g ",scale*stdevr);
+			printf("%g ",scale*stdevi);
+			printf("\n");
 		}
 	}
 
