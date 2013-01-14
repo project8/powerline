@@ -78,6 +78,27 @@ double Waterfall::get_power_squared(int index)
 	return data[index][0]*data[index][0]+data[index][1]*data[index][1];
 }
 
+PowerWaterfall::PowerWaterfall(int npt,int npf,double fstep,double tstep)
+{
+	data=NULL;
+	init(npt,npf,fstep,tstep);
+}
+	
+void PowerWaterfall::init(int npt,int npf,double fstep,double tstep)
+{
+	npoints_t=npt;
+	npoints_f=npf;
+	freq_step=fstep;
+	time_step=tstep;
+	data=new double[npoints_t*npoints_f];
+}
+	
+PowerWaterfall::~PowerWaterfall()
+{
+	delete data;
+}
+
+	
 //------------Correlator-----------
 	
 void Correlator::init(const Monarch *egg,int myfftsize)

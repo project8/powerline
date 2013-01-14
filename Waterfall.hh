@@ -1,9 +1,13 @@
+#pragma once
 #include <fftw3.h>
+#include <math.h>
 #include "Monarch.hpp"
 #include <iostream>
 #include <fstream>
 #include <sstream>
 using namespace std;
+
+class PowerWaterfall;
 
 //Contains information from a series of limited time FFTs
 class Waterfall
@@ -25,10 +29,29 @@ public:
 	void subtractBackground(fftwf_complex *spectrum);
 	void multiplyByFrequency(fftwf_complex *spectrum);
 
+	void fillPowerWaterfall(PowerWaterfall *target);
 	double get_power_squared(int index);
+	double get_power(int index) {return sqrt(get_power_squared(index));};
 
 
 	fftwf_complex *data;
+
+	int npoints_f;     //number of frequency points
+	int npoints_t;     //number of time points
+	double freq_step;  //frequency bin size
+	double time_step;  //time bin size
+};
+
+//a waterfall plot, but with only raw power
+class PowerWaterfall
+{
+	PowerWaterfall() {data=NULL;};
+	PowerWaterfall(int npt,int npf,double fstep,double tstep);
+	void init(int npt,int npf,double fstep,double tstep);
+	~PowerWaterfall();
+
+	int getIndex(int nfreq,int ntime) {return ntime*npoints_f+nfreq;};
+	double *data;
 
 	int npoints_f;     //number of frequency points
 	int npoints_t;     //number of time points
