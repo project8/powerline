@@ -17,6 +17,7 @@ string outfname="test.egg";
 string truthfname="truth.txt";
 PowerCandidateList candidates;
 int nrecords=6;
+int signalevery=1;
 double snr=2.0;
 double energy_loss=1e-15; //watts
 double wattstoevs=(1/1.6e-19); // eV/s per Watt
@@ -24,6 +25,8 @@ double me=511000; //eV
 double ee=32000; //eV
 double f0=26e9; //Hz
 double power=1e-16; //Watts
+
+void print_usage(); //print out instructions
 
 int main(int argc,char *argv[])
 {
@@ -94,6 +97,7 @@ so A=0.07
 			double x1=getGaussianRand(128.0,noise_magnitude);
 			double x2=getGaussianRand(128.0,noise_magnitude);
 			if(!empty)
+			if(onrecord%signalevery==0)
 			if((i>=event_start)&&(i<event_start+event_length)) {
 			    double x=((double)(i-event_start))/sampling_rate;
 			    double phase=x*2*M_PI*(event_freq+x*freq_per_second);
@@ -144,10 +148,23 @@ double getGaussianRand(double mean,double sigma)
    return y1*sigma+mean;
 }
 
+void print_usage()
+{
+	cout << "project 8 data simulator" << endl;
+	cout << "makes a fake egg file" << endl;
+	cout << "usage data_simulator [options]" << endl;
+	cout << "-e data file will be empty of candidates regardless of other options" << endl;
+	cout << "-n (number) this many events will be produced" << endl;
+	cout << "-o (filename) this is the output egg file name" << endl;
+	cout << "-t (filename) this is where the mc truth is stored, locations of candidates" << endl;
+	cout << "-p (number) this is the power of the signals in watts" << endl;
+	cout << "-m (number) signals are made every m events" << endl;
+}
+
 int handle_options(int argc,char *argv[])
 {
     int c;
-    const char *okopts="eo:t:p:n:";
+    const char *okopts="eo:t:p:n:m:";
     while((c=getopt(argc,argv,okopts))!=-1)
 	switch(c)
 	{
@@ -168,6 +185,9 @@ int handle_options(int argc,char *argv[])
 			break;
 		case 's':
 			snr=atof(optarg);
+			break;
+		case 'm':
+			signalevery=atoi(optarg);
 			break;
 		case '?':
 			if(index(okopts,optopt)==NULL)
