@@ -2,6 +2,7 @@
 #include "Histogram.hh"
 #include <unistd.h>
 #include <stdlib.h>
+#include <vector>
 #include <string.h>
 #include <iostream>
 #include <string>
@@ -20,14 +21,18 @@ string input_eggname;
 string background_fname;
 string convolution_fname;
 char format='j';
-double frequency_cut_low=10; //in mhz
-double frequency_cut_high=90; //in mhz
+double frequency_cut_low=20; //in mhz
+double frequency_cut_high=80; //in mhz
 string prefix="temp_";
 //----------------------------
 
 //------output histograms -------
-Histogram correlated_power(400,0,20);
-Histogram convolved_power(400,0,20);
+//Histogram correlated_power(400,0,20);
+Histogram *correlated_powers;
+//Histogram convolved_power(400,0,20);
+Histogram *convolved_powers;
+vector<int> histo_starts;
+vector<int> histo_stops;
 
 int main(int argc,char *argv[])
 {
@@ -50,7 +55,7 @@ int main(int argc,char *argv[])
 		cerr << "no convolution file name given" << endl;
 		return -1;
 	}
-	//----load the background----
+		//----load the background----
 	Background background;
 	background.load(background_fname);
 	int fft_size=2*(background.bg_size-1);
@@ -64,6 +69,21 @@ int main(int argc,char *argv[])
 	Correlator correlator;
 	correlator.init(egg,fft_size);
 	//---------------------------
+	//--- make the historgam array
+	int n_freq_divisions=7;
+	double freq_div_spacing=10;
+	correlated_powers=new Histogram[n_freq_divisions];
+	convolved_powers=new Histogram[n_freq_divisions];
+	for(int i=0;i<n_freq_divisions;i++) {
+		double divstart=frequency_cut_low+i*freq_div_spacing;
+		histo_starts.push_back((divstart*1e6)/correlator.output_waterfall.freq_step);
+		double divstop=frequency_cut_low+(i+2)*freq_div_spacing;
+		histo_stops.push_back((divstop*1e6)/correlator.output_waterfall.freq_step);
+		correlated_powers[i]=Histogram(1000,0,20);
+		convolved_powers[i]=Histogram(1000,0,20);
+	}
+	//------
+
 	//-----figure out where my cuts are----------
 	int f_start=int((frequency_cut_low*1e6)/correlator.output_waterfall.freq_step);
 	int f_stop=int((frequency_cut_high*1e6)/correlator.output_waterfall.freq_step);
@@ -93,8 +113,12 @@ int main(int argc,char *argv[])
 				correlator.output_waterfall.data[index][0]*=background.background_stdev_invert[j][0];
 				correlator.output_waterfall.data[index][1]*=background.background_stdev_invert[j][1];
 				//histogram data
-				if( (j>=f_start) && (j<=f_stop) )
-					correlated_power.increment(correlator.output_waterfall.get_power(index));
+				//if( (j>=f_start) && (j<=f_stop) )
+				//	correlated_power.increment(correlator.output_waterfall.get_power(index));
+				for(int k=0;k<n_freq_divisions;k++) {
+					if( (j>histo_starts[k]) && (j<histo_stops[k]))
+						correlated_powers[k].increment(correlator.output_waterfall.get_power(index));
+					}
 			}
 		}
 		//convolve
@@ -104,13 +128,25 @@ int main(int argc,char *argv[])
 			for(int j=f_start;j<f_stop;j++) {
 				int index=convolved.getIndex(j,i);
 				double p=sqrt(convolved.data[index][0]*convolved.data[index][0]+convolved.data[index][1]*convolved.data[index][1]);
-				if( (j>=f_start) && (j<=f_stop) )
-					convolved_power.increment(p);
+			//	if( (j>=f_start) && (j<=f_stop) )
+				for(int k=0;k<n_freq_divisions;k++) {
+					if( (j>histo_starts[k]) && (j<histo_stops[k]))
+							//convolved_power.increment(p);
+							convolved_powers[k].increment(p);
+				}
 			}
 		}
 	}
-	correlated_power.saveToFile(prefix+"_correlated_power_histogram.txt");
-	convolved_power.saveToFile(prefix+"_convolved_power_histogram.txt");
+//	correlated_power.saveToFile(prefix+"_correlated_power_histogram.txt");
+//	convolved_power.saveToFile(prefix+"_convolved_power_histogram.txt");
+	for(int k=0;k<n_freq_divisions;k++) {
+		char offnum[256];
+		sprintf(offnum,"%d",(int)(correlator.output_waterfall.freq_step*((double)k)/1e6));
+		string newprefix=prefix+string("_offset")+string(offnum);
+		correlated_powers[k].saveToFile(newprefix+"_correlated_power_histogram.txt");
+		convolved_powers[k].saveToFile(newprefix+"_convolved_power_histogram.txt");
+
+	}
 }
 
 int handle_options(int argc,char *argv[])

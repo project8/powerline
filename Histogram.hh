@@ -5,6 +5,7 @@ using namespace std;
 class Histogram
 {
 public:
+	Histogram() {data=NULL; size=0;};
     Histogram(int sz,float mmin,float mmax);
     ~Histogram();
     void saveToFile(string fname);
