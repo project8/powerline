@@ -41,8 +41,8 @@ int main(int argc,char *argv[])
 
 	//int record_size=262144;
 	int record_size=4194304;
-	//int event_length=40000; //200e-6 s * 200 MHz
-	int event_length=1000000; //a long time
+	int event_length=40000; //200e-6 s * 200 MHz
+	//int event_length=1000000; //a long time
 	int sampling_rate=200e6;
 /*
 if each sample has a gaussian with stdev sigma

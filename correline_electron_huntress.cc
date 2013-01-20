@@ -79,8 +79,12 @@ int main(int argc,char *argv[])
 		histo_starts.push_back((divstart*1e6)/correlator.output_waterfall.freq_step);
 		double divstop=frequency_cut_low+(i+2)*freq_div_spacing;
 		histo_stops.push_back((divstop*1e6)/correlator.output_waterfall.freq_step);
-		correlated_powers[i]=Histogram(1000,0,20);
-		convolved_powers[i]=Histogram(1000,0,20);
+		correlated_powers[i].init(1000,0,20);
+		convolved_powers[i].init(1000,0,20);
+	}
+	for(int i=0;i<n_freq_divisions;i++) {
+		cout << "histo starts " << i << " " << histo_starts[i] << endl;
+		cout << "histo stops " << i << " " << histo_stops[i] << endl;
 	}
 	//------
 
@@ -130,9 +134,10 @@ int main(int argc,char *argv[])
 				double p=sqrt(convolved.data[index][0]*convolved.data[index][0]+convolved.data[index][1]*convolved.data[index][1]);
 			//	if( (j>=f_start) && (j<=f_stop) )
 				for(int k=0;k<n_freq_divisions;k++) {
-					if( (j>histo_starts[k]) && (j<histo_stops[k]))
+					if( (j>histo_starts[k]) && (j<histo_stops[k])) {
 							//convolved_power.increment(p);
 							convolved_powers[k].increment(p);
+					}
 				}
 			}
 		}
@@ -140,8 +145,9 @@ int main(int argc,char *argv[])
 //	correlated_power.saveToFile(prefix+"_correlated_power_histogram.txt");
 //	convolved_power.saveToFile(prefix+"_convolved_power_histogram.txt");
 	for(int k=0;k<n_freq_divisions;k++) {
+		double divstart=round(frequency_cut_low+k*freq_div_spacing);
 		char offnum[256];
-		sprintf(offnum,"%d",(int)(correlator.output_waterfall.freq_step*((double)k)/1e6));
+		sprintf(offnum,"%d",(int)(divstart));
 		string newprefix=prefix+string("_offset")+string(offnum);
 		correlated_powers[k].saveToFile(newprefix+"_correlated_power_histogram.txt");
 		convolved_powers[k].saveToFile(newprefix+"_convolved_power_histogram.txt");

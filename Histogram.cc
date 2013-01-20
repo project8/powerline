@@ -5,6 +5,11 @@
 
 Histogram::Histogram(int sz,float mmin,float mmax)
 {
+	init(sz,mmin,mmax);
+}
+
+void Histogram::init(int sz,float mmin,float mmax)
+{
     size=sz;
     min=mmin;
     max=mmax;
