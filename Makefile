@@ -42,5 +42,6 @@ correline_utils.o: correline_utils.cc correline_utils.hh
 	g++ $(CFLAGS) -c correline_utils.cc -o correline_utils.o
 
 clean:
+	rm -f *.o
 	rm -f powerline
 	rm -f sweepline
