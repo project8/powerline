@@ -87,7 +87,8 @@ so A=0.07
 	double phase_diff=2*M_PI*getUniformRand(1.0);
 	for(int onrecord=0;onrecord<nrecords;onrecord++) {
 		int event_start=getUniformRand(record_size-event_length);
-		double event_freq=(20+60*getUniformRand(1.0))*1e6;
+		//put all evets in the 40 to 60 range
+		double event_freq=(40+20*getUniformRand(1.0))*1e6;
 		candidates.push(Candidate(event_freq/1e6,(((double)onrecord)*((double)record_size)+((double)event_start))/((double)sampling_rate),1.0));
 //		cout << "event at " << (((double)onrecord)*((double)record_size)+((double)event_start))/(1e6*(double)sampling_rate) << " s" << endl;
 //		const MonarchRecord *r1=egg->GetRecordOne();

@@ -70,7 +70,7 @@ int main(int argc,char *argv[])
 	correlator.init(egg,fft_size);
 	//---------------------------
 	//--- make the historgam array
-	int n_freq_divisions=7;
+	int n_freq_divisions=5;
 	double freq_div_spacing=10;
 	correlated_powers=new Histogram[n_freq_divisions];
 	convolved_powers=new Histogram[n_freq_divisions];
