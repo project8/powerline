@@ -2,7 +2,7 @@ MONARCHLOC := /usr/local
 CFLAGS := -Wall -I $(MONARCHLOC)/include -g
 LIBS := -L$(MONARCHLOC)/lib -lMonarchCore -lfftw3f -lfftw3f_threads -lpthread -lm -lprotobuf
 
-all: dpph_search powerline correline correline_electron_huntress view_candidate
+all: dpph_search powerline correline correline_electron_huntress view_candidate powerline_twochannel
 
 powerline: powerline.c
 	g++ $(CFLAGS) -c powerline.c -o powerline.o
@@ -19,6 +19,10 @@ view_candidate: view_candidate.cc Waterfall.o correline_utils.o
 correline: correline.cc Waterfall.o
 	g++ $(CFLAGS) -c correline.cc -o correline.o
 	g++ $(CFLAGS) -o correline  $(LIBS) correline.o Waterfall.o
+
+powerline_twochannel: powerline_twochannel.cc Waterfall.o
+	g++ $(CFLAGS) -c powerline_twochannel.cc -o powerline_twochannel.o
+	g++ $(CFLAGS) -o powerline_twochannel  $(LIBS) powerline_twochannel.o Waterfall.o
 
 dpph_search: dpph_search.cc Waterfall.o
 	g++ $(CFLAGS) -c dpph_search.cc -o dpph_search.o
