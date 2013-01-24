@@ -79,8 +79,8 @@ int main(int argc,char *argv[])
 		histo_starts.push_back((divstart*1e6)/correlator.output_waterfall.freq_step);
 		double divstop=frequency_cut_low+(i+2)*freq_div_spacing;
 		histo_stops.push_back((divstop*1e6)/correlator.output_waterfall.freq_step);
-		powers_1[i].init(1000,0,20);
-		powers_2[i].init(1000,0,20);
+		powers_1[i].init(1000,0,25);
+		powers_2[i].init(1000,0,25);
 		powers_combined[i].init(1000,0,20);
 		convolved_powers[i].init(1000,0,20);
 	}
@@ -117,14 +117,15 @@ int main(int argc,char *argv[])
 		for(int i=0;i<correlator.output_waterfall.npoints_t;i++) {
 			for(int j=0;j<correlator.output_waterfall.npoints_f;j++) {
 				int index=correlator.output_waterfall.getIndex(j,i);
-				channel1_power[index]=(correlator.getPowerChannel1(index)-background.background_avg[j][0])*background.background_stdev_invert[j][0];
-				channel2_power[index]=(correlator.getPowerChannel2(index)-background.background_avg[j][1])*background.background_stdev_invert[j][1];
+				channel1_power[index]=(correlator.getPowerChannel1(index))*background.background_stdev_invert[j][0];
+				channel2_power[index]=(correlator.getPowerChannel2(index))*background.background_stdev_invert[j][1];
 				for(int k=0;k<n_freq_divisions;k++) {
-					if( (j>histo_starts[k]) && (j<histo_stops[k]))
+					if( (j>histo_starts[k]) && (j<histo_stops[k])) {
 						powers_1[k].increment(channel1_power[index]);
 						powers_2[k].increment(channel2_power[index]);
-						powers_combined[k].increment(channel1_power[index]+channel2_power[index]);
+						powers_combined[k].increment(0.5*(channel1_power[index]+channel2_power[index]));
 					}
+				}
 			}
 		}
 		//convolve
@@ -137,7 +138,7 @@ int main(int argc,char *argv[])
 				convolution[index]=0;
 				for(int k=0;k<cmap.conv_length;k++) {
 					int nindex=correlator.output_waterfall.getIndex(j+cmap.conv_fs[k],i+cmap.conv_ts[k]);
-					convolution[index]+=channel1_power[nindex]+channel2_power[nindex];
+					convolution[index]+=0.5*(channel1_power[nindex]+channel2_power[nindex]);
 				}
 				convolution[index]*=normalization;
 				//histogram power
