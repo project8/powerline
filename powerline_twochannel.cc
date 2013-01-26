@@ -28,6 +28,7 @@ double *channel1_sum;
 double *channel2_sum;
 double *channel1_sumsq;
 double *channel2_sumsq;
+double *channel_covariance;
 //-------------------------
 int main(int argc,char *argv[])
 {
@@ -53,11 +54,13 @@ int main(int argc,char *argv[])
 	channel2_sum=new double[out_size];
 	channel1_sumsq=new double[out_size];
 	channel2_sumsq=new double[out_size];
+	channel_covariance=new double[out_size];
 	for(int i=0;i<out_size;i++) {
 		channel1_sum[i]=0;
 		channel2_sum[i]=0;
 		channel1_sumsq[i]=0;
 		channel2_sumsq[i]=0;
+		channel_covariance[i]=0;
 	}
 	long total_fft_count=0;
     while(egg->ReadRecord()) {
@@ -72,6 +75,7 @@ int main(int argc,char *argv[])
 				channel2_sum[j]+=x2;
 				channel1_sumsq[j]+=x1*x1;
 				channel2_sumsq[j]+=x2*x2;
+				channel_covariance[i]+=x1*x2;
 			}
 			total_fft_count++;
 		}
@@ -90,7 +94,9 @@ int main(int argc,char *argv[])
 			printf("%g ",scale*avg2);
 			double stdev1=sqrt(channel1_sumsq[i]/n-avg1*avg1);
 			double stdev2=sqrt(channel2_sumsq[i]/n-avg2*avg2);
-			printf("%g %g\n",scale*stdev1,scale*stdev2);
+			printf("%g %g",scale*stdev1,scale*stdev2);
+			double cov=sqrt(channel_covariance[i]/n-avg1*avg2);
+			printf(" %g\n",scale*cov);
 		}
 	}
 }
