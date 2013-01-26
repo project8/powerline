@@ -95,8 +95,8 @@ int main(int argc,char *argv[])
 			double stdev1=sqrt(channel1_sumsq[i]/n-avg1*avg1);
 			double stdev2=sqrt(channel2_sumsq[i]/n-avg2*avg2);
 			printf("%g %g",scale*stdev1,scale*stdev2);
-			double cov=sqrt(channel_covariance[i]/n-avg1*avg2);
-			printf(" %g\n",scale*cov);
+			double cov=channel_covariance[i]/n-avg1*avg2;
+			printf(" %g\n",scale*scale*cov);
 		}
 	}
 }
