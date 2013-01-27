@@ -75,7 +75,7 @@ int main(int argc,char *argv[])
 				channel2_sum[j]+=x2;
 				channel1_sumsq[j]+=x1*x1;
 				channel2_sumsq[j]+=x2*x2;
-				channel_covariance[i]+=x1*x2;
+				channel_covariance[j]+=x1*x2;
 			}
 			total_fft_count++;
 		}
@@ -85,18 +85,18 @@ int main(int argc,char *argv[])
 	} else { //assume ascii
 		double n=((double)total_fft_count);
 		printf("#scale: %g\n",scale);
-		printf("#avg_chan1 avg_chan2 stdev_chan1 stdev_chan2\n");
+		printf("#avg_chan1 avg_chan2 stdev_chan1 stdev_chan2 covariance(unscaled) n=%g\n",n);
 		for(int i=0;i<out_size;i++) {
 			printf("%f ",correlator.output_waterfall.freq_step*((double)i)/1e6);
 			double avg1=channel1_sum[i]/n;
 			double avg2=channel2_sum[i]/n;
-			printf("%g ",scale*avg1);
-			printf("%g ",scale*avg2);
+			printf("%0.9g ",scale*avg1);
+			printf("%0.9g ",scale*avg2);
 			double stdev1=sqrt(channel1_sumsq[i]/n-avg1*avg1);
 			double stdev2=sqrt(channel2_sumsq[i]/n-avg2*avg2);
-			printf("%g %g",scale*stdev1,scale*stdev2);
-			double cov=channel_covariance[i]/n-avg1*avg2;
-			printf(" %g\n",scale*scale*cov);
+			printf("%0.9g %0.9g",scale*stdev1,scale*stdev2);
+			double cov=(channel_covariance[i]/n);
+			printf(" %0.9g\n",scale*scale*(cov-avg1*avg2));
 		}
 	}
 }

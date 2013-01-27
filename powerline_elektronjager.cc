@@ -28,6 +28,8 @@ string prefix="temp_";
 Histogram *powers_1;
 Histogram *powers_2;
 Histogram *powers_combined;
+Histogram *convolved_1;
+Histogram *convolved_2;
 Histogram *convolved_powers;
 vector<int> histo_starts;
 vector<int> histo_stops;
@@ -74,6 +76,8 @@ int main(int argc,char *argv[])
 	powers_2=new Histogram[n_freq_divisions];
 	powers_combined=new Histogram[n_freq_divisions];
 	convolved_powers=new Histogram[n_freq_divisions];
+	convolved_1=new Histogram[n_freq_divisions];
+	convolved_2=new Histogram[n_freq_divisions];
 	for(int i=0;i<n_freq_divisions;i++) {
 		double divstart=frequency_cut_low+i*freq_div_spacing;
 		histo_starts.push_back((divstart*1e6)/correlator.output_waterfall.freq_step);
@@ -83,6 +87,8 @@ int main(int argc,char *argv[])
 		powers_2[i].init(1000,0,25);
 		powers_combined[i].init(1000,0,20);
 		convolved_powers[i].init(1000,0,20);
+		convolved_1[i].init(1000,0,20);
+		convolved_2[i].init(1000,0,20);
 	}
 	for(int i=0;i<n_freq_divisions;i++) {
 		cout << "histo starts " << i << " " << histo_starts[i] << endl;
@@ -105,6 +111,8 @@ int main(int argc,char *argv[])
 	float *channel1_power=new float[out_size*correlator.nffts_per_event];
 	float *channel2_power=new float[out_size*correlator.nffts_per_event];
 	float *convolution=new float[out_size*correlator.nffts_per_event];
+	float *convolution_1=new float[out_size*correlator.nffts_per_event];
+	float *convolution_2=new float[out_size*correlator.nffts_per_event];
 	//
 	
 	//---------------------
@@ -136,15 +144,23 @@ int main(int argc,char *argv[])
 			for(int j=0;j<correlator.output_waterfall.npoints_f-fl;j++) {
 				int index=correlator.output_waterfall.getIndex(j,i);
 				convolution[index]=0;
+				convolution_1[index]=0;
+				convolution_2[index]=0;
 				for(int k=0;k<cmap.conv_length;k++) {
 					int nindex=correlator.output_waterfall.getIndex(j+cmap.conv_fs[k],i+cmap.conv_ts[k]);
+					convolution_1[index]+=channel1_power[nindex]+channel2_power[nindex];
+					convolution_2[index]+=channel2_power[nindex]+channel2_power[nindex];
 					convolution[index]+=0.5*(channel1_power[nindex]+channel2_power[nindex]);
 				}
 				convolution[index]*=normalization;
+				convolution_1[index]*=normalization;
+				convolution_1[index]*=normalization;
 				//histogram power
 				for(int k=0;k<n_freq_divisions;k++) {
 					if( (j>histo_starts[k]) && (j<histo_stops[k])) {
 						convolved_powers[k].increment(convolution[index]);
+						convolved_1[k].increment(convolution_1[index]);
+						convolved_2[k].increment(convolution_2[index]);
 					}
 				}
 			}
@@ -159,6 +175,8 @@ int main(int argc,char *argv[])
 		powers_2[k].saveToFile(newprefix+"_power_2_histo.txt");
 		powers_combined[k].saveToFile(newprefix+"_power_combined_histo.txt");
 		convolved_powers[k].saveToFile(newprefix+"_convolved_powers_histo.txt");
+		convolved_1[k].saveToFile(newprefix+"_convolved_1_histo.txt");
+		convolved_2[k].saveToFile(newprefix+"_convolved_2_histo.txt");
 	}
 }
 
