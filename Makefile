@@ -1,5 +1,6 @@
 MONARCHLOC := /usr/local
-CFLAGS := -Wall -I $(MONARCHLOC)/include -g
+#CFLAGS := -Wall -I $(MONARCHLOC)/include -g
+CFLAGS := -Wall -I $(MONARCHLOC)/include -O3
 LIBS := -L$(MONARCHLOC)/lib -lMonarchCore -lfftw3f -lfftw3f_threads -lpthread -lm -lprotobuf
 
 all: dpph_search powerline correline correline_electron_huntress view_candidate powerline_twochannel powerline_elektronjager

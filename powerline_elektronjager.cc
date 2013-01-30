@@ -23,6 +23,7 @@ char format='j';
 double frequency_cut_low=20; //in mhz
 double frequency_cut_high=80; //in mhz
 string prefix="temp_";
+double cand_cut=-1;
 //----------------------------
 
 Histogram *powers_1;
@@ -103,7 +104,7 @@ int main(int argc,char *argv[])
 	
 
 //	int on_event=0;
-//	double total_time=0;
+	double total_time=0;
 	double scale=correlator.getScaleFactor();
 	int out_size=correlator.output_waterfall.npoints_f;
 	
@@ -113,6 +114,8 @@ int main(int argc,char *argv[])
 	float *convolution=new float[out_size*correlator.nffts_per_event];
 	float *convolution_1=new float[out_size*correlator.nffts_per_event];
 	float *convolution_2=new float[out_size*correlator.nffts_per_event];
+	PowerCandidateList candidates;
+	candidates.max_length=100;
 	//
 	
 	//---------------------
@@ -155,6 +158,16 @@ int main(int argc,char *argv[])
 				convolution[index]*=normalization;
 				convolution_1[index]*=normalization;
 				convolution_1[index]*=normalization;
+				//record candidates
+				if((j>f_start)&&(j<f_stop))
+				if(cand_cut>0)
+				if(convolution[index]>cand_cut) {
+					double f=correlator.output_waterfall.freq_step*((double)j)/1e6;
+					double t=total_time+correlator.output_waterfall.time_step*((double)i);
+//					cout << "f t " << f << " " << t << " " << j << " " << i << endl;
+					candidates.push(Candidate(f,t,convolution[index]));
+				}
+
 				//histogram power
 				for(int k=0;k<n_freq_divisions;k++) {
 					if( (j>histo_starts[k]) && (j<histo_stops[k])) {
@@ -165,6 +178,9 @@ int main(int argc,char *argv[])
 				}
 			}
 		}
+//		cout << "timestep: " << ((double)correlator.record_size)t)/(correlator.sampling_rate_mhz*1e6) << endl;
+
+		total_time+=((double)correlator.record_size)/(correlator.sampling_rate_mhz*1e6);
 	}
 	for(int k=0;k<n_freq_divisions;k++) {
 		double divstart=round(frequency_cut_low+k*freq_div_spacing);
@@ -178,12 +194,13 @@ int main(int argc,char *argv[])
 		convolved_1[k].saveToFile(newprefix+"_convolved_1_histo.txt");
 		convolved_2[k].saveToFile(newprefix+"_convolved_2_histo.txt");
 	}
+	candidates.saveToFile(prefix+"_candidates.txt");
 }
 
 int handle_options(int argc,char *argv[])
 {
 	int c;
-    const char *okopts="i:ab:p:c:";
+    const char *okopts="i:ab:p:c:d:";
     while((c=getopt(argc,argv,okopts))!=-1)
 	switch(c)
 	{
@@ -201,6 +218,9 @@ int handle_options(int argc,char *argv[])
 			break;
 		case 'p':
 			prefix=string(optarg);
+			break;
+		case 'd':
+			cand_cut=atof(optarg);
 			break;
 		case '?':
 			if(index(okopts,optopt)==NULL)

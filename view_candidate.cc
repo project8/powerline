@@ -33,10 +33,10 @@ int main(int argc,char *argv[])
 		cerr << "no background file name given" << endl;
 		return -1;
 	}
-//	if(convolution_filename=="") {
-//		cerr << "no convolution file name given" << endl;
-//		return -1;
-//	}
+	if(convolution_filename=="") {
+		cerr << "no convolution file name given" << endl;
+		return -1;
+	}
 	if(candidate_list_filename=="") {
 		cerr << "no candidate list given " << endl;
 		return -1;
@@ -54,6 +54,10 @@ int main(int argc,char *argv[])
     const Monarch *egg=Monarch::OpenForReading(std::string(input_eggname));
 	Correlator correlator;
 	correlator.init(egg,fft_size);
+	//----load the convolution----
+	ConvolutionMap cmap;
+	cmap.load(convolution_filename);
+
 	//get candidate events
 	for(unsigned int i=0;i<candidates.size();i++) {
 		candidates[i].event_no=candidates[i].getEventNo(correlator.sampling_rate_mhz,correlator.record_size);
@@ -81,7 +85,29 @@ int main(int argc,char *argv[])
 					cout << "fbin " << fbin << " tbin " << tbin << endl;
 					stringstream onames;
 					onames << "candidate_" << i << ".txt";
-					correlator.output_waterfall.saveSubWaterfall(fbin-fbins/2,fbin+fbins/2,tbin-tbins/2,tbin+tbins/2,total_time,onames.str());
+					string fname=onames.str();
+					ofstream fout(fname.c_str());
+					for(int k=fbin-fbins/2;k<fbin+fbins/2;k++) {
+					for(int m=tbin-tbins/2;m<tbin+tbins/2;m++) {
+						/*
+						int index=correlator.output_waterfall.getIndex(k,m);
+						double x=correlator.fft_output_1[index][0];
+						double y=correlator.fft_output_1[index][1];
+						fout << k << " " << m << " " << x*x+y*y << endl;
+						*/
+						double v=0;
+						for(int n=0;n<cmap.conv_length;n++) {
+							int nindex=correlator.output_waterfall.getIndex(k+cmap.conv_fs[n],m+cmap.conv_ts[n]);
+							double x=correlator.fft_output_1[nindex][0];
+							double y=correlator.fft_output_1[nindex][1];
+							v+=x*x+y*y;
+						}
+						fout << k << " " << m << " " << v << endl;
+					}
+					fout << endl;
+					}
+					fout.close();
+//					correlator.output_waterfall.saveSubWaterfall(fbin-fbins/2,fbin+fbins/2,tbin-tbins/2,tbin+tbins/2,total_time,onames.str());
 				}
 			}
 		}
