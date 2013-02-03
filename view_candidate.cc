@@ -8,6 +8,7 @@ string input_eggname;
 string background_filename;
 string convolution_filename;
 string candidate_list_filename;
+string prefix;
 int tbins=20;
 int fbins=20;
 
@@ -84,30 +85,35 @@ int main(int argc,char *argv[])
 					int tbin=correlator.output_waterfall.getTimeBin(candidates[i].time-total_time);
 					cout << "fbin " << fbin << " tbin " << tbin << endl;
 					stringstream onames;
-					onames << "candidate_" << i << ".txt";
+					onames << prefix << "candidate_" << i << ".txt";
+	//				/*
 					string fname=onames.str();
 					ofstream fout(fname.c_str());
 					for(int k=fbin-fbins/2;k<fbin+fbins/2;k++) {
 					for(int m=tbin-tbins/2;m<tbin+tbins/2;m++) {
-						/*
-						int index=correlator.output_waterfall.getIndex(k,m);
-						double x=correlator.fft_output_1[index][0];
-						double y=correlator.fft_output_1[index][1];
-						fout << k << " " << m << " " << x*x+y*y << endl;
-						*/
+					//	int index=correlator.output_waterfall.getIndex(k,m);
+					//	double x=correlator.fft_output_1[index][0];
+					//	double y=correlator.fft_output_1[index][1];
+					//	fout << k << " " << m << " " << x*x+y*y << endl;
 						double v=0;
 						for(int n=0;n<cmap.conv_length;n++) {
 							int nindex=correlator.output_waterfall.getIndex(k+cmap.conv_fs[n],m+cmap.conv_ts[n]);
-							double x=correlator.fft_output_1[nindex][0];
-							double y=correlator.fft_output_1[nindex][1];
-							v+=x*x+y*y;
+							double x=correlator.getPowerChannel1(nindex)*background.background_stdev_invert[k+cmap.conv_fs[n]][0];
+							double y=correlator.getPowerChannel2(nindex)*background.background_stdev_invert[k+cmap.conv_fs[n]][1];
+//							double x=correlator.fft_output_1[nindex][0];
+//							double y=correlator.fft_output_1[nindex][1];
+							//v+=x*x+y*y;
+							v+=0.5*(x+y);
 						}
-						fout << k << " " << m << " " << v << endl;
+						fout << k << " " << m << " ";
+						fout << ((double)(k))*correlator.output_waterfall.freq_step << " " << ((double)(m))*correlator.output_waterfall.time_step+total_time << " ";
+						fout << v << endl;
 					}
 					fout << endl;
 					}
 					fout.close();
-//					correlator.output_waterfall.saveSubWaterfall(fbin-fbins/2,fbin+fbins/2,tbin-tbins/2,tbin+tbins/2,total_time,onames.str());
+	//				*/
+	//				correlator.output_waterfall.saveSubWaterfall(fbin-fbins/2,fbin+fbins/2,tbin-tbins/2,tbin+tbins/2,total_time,onames.str());
 				}
 			}
 		}
@@ -127,12 +133,13 @@ void print_usage()
 	cout << "    -c (filename) sets the convolution shape" << endl;
 	cout << "    -f (integer) sets the number of frequency bins around the candidate to plot" << endl;
 	cout << "    -t (integer) sets the number of time bins around the candidate to plot" << endl;
+	cout << "    -p (prefix) prefix to candidate files" << endl;
 }
 
 int handle_options(int argc,char *argv[])
 {
 	int c;
-    const char *okopts="b:i:l:c:f:t:";
+    const char *okopts="b:i:l:c:f:t:p:";
     while((c=getopt(argc,argv,okopts))!=-1)
 	switch(c)
 	{
@@ -153,6 +160,9 @@ int handle_options(int argc,char *argv[])
 			break;
 		case 't':
 			tbins=atoi(optarg);
+			break;
+		case 'p':
+			prefix=string(optarg);
 			break;
 	}
 	return optind;

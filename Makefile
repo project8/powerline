@@ -13,6 +13,10 @@ sweepline: sweepline.c
 	g++ $(CFLAGS) -c sweepline.c -o sweepline.o
 	g++ $(CFLAGS) -o sweepline  $(LIBS) sweepline.o
 
+viewcandidate_elektronjager: viewcandidate_elektronjager.cc Waterfall.o correline_utils.o Histogram.o
+	g++ $(CFLAGS) -c viewcandidate_elektronjager.cc -o viewcandidate_elektronjager.o
+	g++ $(CFLAGS) -o viewcandidate_elektronjager $(LIBS) viewcandidate_elektronjager.o Waterfall.o correline_utils.o Histogram.o
+
 view_candidate: view_candidate.cc Waterfall.o correline_utils.o
 	g++ $(CFLAGS) -c view_candidate.cc -o view_candidate.o
 	g++ $(CFLAGS) -o view_candidate  $(LIBS) view_candidate.o Waterfall.o correline_utils.o
