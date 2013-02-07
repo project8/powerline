@@ -6,11 +6,11 @@ LIBS := -L$(MONARCHLOC)/lib -lMonarchCore -lfftw3f -lfftw3f_threads -lpthread -l
 all: dpph_search powerline correline correline_electron_huntress view_candidate powerline_twochannel powerline_elektronjager
 
 powerline: powerline.c
-	g++ $(CFLAGS) -c powerline.c -o powerline.o
+	g++ $(CFLAGS) -c powerline.cc -o powerline.o
 	g++ $(CFLAGS) -o powerline $(LIBS) powerline.o
 
 sweepline: sweepline.c
-	g++ $(CFLAGS) -c sweepline.c -o sweepline.o
+	g++ $(CFLAGS) -c sweepline.cc -o sweepline.o
 	g++ $(CFLAGS) -o sweepline  $(LIBS) sweepline.o
 
 viewcandidate_elektronjager: viewcandidate_elektronjager.cc Waterfall.o correline_utils.o Histogram.o

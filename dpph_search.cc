@@ -74,7 +74,7 @@ int main(int argc,char *argv[])
 	double signal_level=0;
 	//use the dbm power
 	background_set=true;
-	signal_level=pow10(power_cut_dbm/10.0)/scale;
+	signal_level=pow(10., power_cut_dbm/10.0)/scale;
 //	cerr << "signal level cut is " << signal_level << cut;
 
 //	cout << " a record is " << correlator.output_waterfall.time_step*((double)correlator.nffts_per_event) << " seconds long" << endl;
