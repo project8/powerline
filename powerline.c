@@ -59,7 +59,7 @@ int main(int argc,char *argv[])
 	egg->ReadHeader();
 	const MonarchHeader *eggheader=egg->GetHeader();
 	const MonarchRecord *event;
-	sampling_rate_mhz=eggheader->GetAcqRate();
+	sampling_rate_mhz=eggheader->GetAcquisitionRate();
 
 
 //	printf("record size: %d\n",eggheader->GetRecordSize());
@@ -89,9 +89,9 @@ int main(int argc,char *argv[])
 	//while((event=egg->GetNextEvent())!=NULL&&(on_event<=max_number_of_events)) {
 	while(egg->ReadRecord()) {
 		if(on_channel==1)
-			event=egg->GetRecordOne();
+			event=egg->GetRecordSeparateOne();
 		else 
-			event=egg->GetRecordTwo();
+			event=egg->GetRecordSeparateTwo();
 		if(event==NULL)  {
 			fprintf(stderr,"ERROR: event was null.  aborting\n");
 			return -1;
@@ -100,7 +100,7 @@ int main(int argc,char *argv[])
 		//for(i=0;i<current.data->record_size;i++)
 		for(i=0;i<eggheader->GetRecordSize();i++)
 			//fft_input[i]=(float)(current.data->record[i])-128.0;
-			fft_input[i]=(float)(event->fDataPtr[i])-128.0;
+			fft_input[i]=(float)(event->fData[i])-128.0;
 		//perform the ffts
 		fftwf_execute(fft_plan);
 		//pack in to power spectrum

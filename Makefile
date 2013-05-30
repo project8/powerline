@@ -1,17 +1,18 @@
-MONARCHLOC := /usr/local
+MONARCHLOC := /home/laroque/Repos/monarch/cbuild
 #CFLAGS := -Wall -I $(MONARCHLOC)/include -g
 CFLAGS := -Wall -I $(MONARCHLOC)/include -O3
 LIBS := -L$(MONARCHLOC)/lib -lMonarchCore -lfftw3f -lfftw3f_threads -lpthread -lm -lprotobuf
+LDFLAGS = -Wl,-rpath,$(MONARCHLOC)/lib
 
 all: dpph_search powerline correline correline_electron_huntress view_candidate powerline_twochannel powerline_elektronjager
 
 powerline: powerline.c
 	g++ $(CFLAGS) -c powerline.c -o powerline.o
-	g++ $(CFLAGS) -o powerline $(LIBS) powerline.o
+	g++ $(CFLAGS) $(LDFLAGS) -o powerline $(LIBS) powerline.o
 
 sweepline: sweepline.c
 	g++ $(CFLAGS) -c sweepline.c -o sweepline.o
-	g++ $(CFLAGS) -o sweepline  $(LIBS) sweepline.o
+	g++ $(CFLAGS) $(LDFLAGS) -o sweepline  $(LIBS) sweepline.o
 
 viewcandidate_elektronjager: viewcandidate_elektronjager.cc Waterfall.o correline_utils.o Histogram.o
 	g++ $(CFLAGS) -c viewcandidate_elektronjager.cc -o viewcandidate_elektronjager.o
