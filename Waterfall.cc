@@ -106,7 +106,7 @@ void Correlator::init(const Monarch *egg,int myfftsize)
 	fft_size=myfftsize;
     egg->ReadHeader();
     const MonarchHeader *eggheader=egg->GetHeader();
-    sampling_rate_mhz=eggheader->GetAcqRate();
+    sampling_rate_mhz=eggheader->GetAcquisitionRate();
     record_size=eggheader->GetRecordSize();
 	//decide the optimal size for ffts and allocate memory
     if(record_size<fft_size) {
@@ -128,20 +128,20 @@ void Correlator::init(const Monarch *egg,int myfftsize)
 	
 void Correlator::process_channel1(const Monarch *egg)
 {
-	const MonarchRecord *event_1=egg->GetRecordOne();
+	const MonarchRecord *event_1=egg->GetRecordSeparateOne();
 	//convert data to floats
    	for(int i=0;i<record_size;i++)
-   		fft_input[i]=(float)(event_1->fDataPtr[i])-128.0;
+   		fft_input[i]=(float)(event_1->fData[i])-128.0;
    	//perform the ffts
    	fftwf_execute(fft_plan_1);
 }
 
 void Correlator::process_channel2(const Monarch *egg)
 {
-	const MonarchRecord *event_2=egg->GetRecordTwo();
+	const MonarchRecord *event_2=egg->GetRecordSeparateTwo();
 	//convert data to floats
 	for(int i=0;i<record_size;i++)
-   		fft_input[i]=(float)(event_2->fDataPtr[i])-128.0;
+   		fft_input[i]=(float)(event_2->fData[i])-128.0;
    	//perform the ffts
     fftwf_execute(fft_plan_2);
 }
